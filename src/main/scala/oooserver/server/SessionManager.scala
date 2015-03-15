@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
+import oooserver.server.api.{ErrorCode, CustomErrorException}
+import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsSuccess, Json}
 
 import scala.concurrent.duration._
@@ -12,7 +14,7 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 case class CacheData(
-                      token: String,
+                      sessionId: String,
                       opponent: Option[String],
                       memory: Option[Map[String, String]]
                       )
@@ -22,6 +24,8 @@ object CacheData {
 }
 
 object SessionManager {
+
+  final val logger = LoggerFactory.getLogger(this.getClass)
 
   final val expired = TimeUnit.SECONDS.convert(5, TimeUnit.MINUTES).toInt // session expires after 5 minutes of inactivity
 
@@ -51,7 +55,7 @@ object SessionManager {
     client.get(username).map {
       case Some(x) => CacheData.fmtJson.reads(Json.parse(x.asInstanceOf[String])) match {
         case JsSuccess(d, _) => Some(d)
-        case _ => throw new IllegalStateException("Couldn't parse cached data")
+        case _ => throw CustomErrorException("Couldn't parse cached data",ErrorCode.ERR_SYSTEM)
       }
       case None => None
     }
@@ -61,15 +65,12 @@ object SessionManager {
       cdOpt.exists(cd => cd.opponent.isDefined)
     }
 
-  def onlinePlayersSorted(): Future[List[String]] = {
-    client.keys().map(e => e.sorted)
-  }
 
   def onlinePlayers(): Future[List[String]] = {
     client.keys()
   }
 
-  def unPairedPlayers: Future[List[String]] =
+  def unPairedPlayers(): Future[List[String]] =
     onlinePlayers().flatMap { op =>
       Future.sequence(op.map {
         case username =>
@@ -83,7 +84,7 @@ object SessionManager {
     }
 
 
-  def findFreePlayer: Future[String] =
+  def findFreePlayer(): Future[String] =
     unPairedPlayers.map { pp =>
       pp.head
     }
@@ -92,60 +93,73 @@ object SessionManager {
     get(username).flatMap { cdOp =>
       cdOp.map { cd =>
         cd.opponent.isDefined match {
-          case true => Future.successful(false)
-          case false => store(username, cd.copy(opponent = Some(opName)))
+          case true =>
+            logger.info(s"Can't Pair $username with $opName because $opName is alredy paired with ${cd.opponent.get}")
+            Future.successful(false)
+          case false =>
+            logger.info(s"Pairing $username with $opName")
+            store(username, cd.copy(opponent = Some(opName)))
         }
       }.getOrElse(Future.successful(false))
 
     }
 
   def pairWith(op1: String, op2: String): Future[Boolean] =
-    setOpponent(op1, op2).flatMap {
-      case true => setOpponent(op2, op1)
-      case false => Future.successful(false)
+    isPaired(op1).flatMap{
+      case true => throw CustomErrorException(s"$op1 is already paired",ErrorCode.ERR_USER_ALREADY_PAIRED)
+      case false => isPaired(op2).flatMap{
+        case true => throw CustomErrorException(s"$op2 is already paired",ErrorCode.ERR_USER_ALREADY_PAIRED)
+        case false =>
+          setOpponent(op1, op2).flatMap {
+            case true => setOpponent(op2, op1)
+            case false => Future.successful(false)
+          }
+      }
+
     }
 
-  def pairAnonimous(username: String): Future[String] =
-    findFreePlayer.flatMap { fp =>
-      pairWith(username, fp).map {
-        case true => fp
-        case false => throw new Throwable("Problem with pair")
+  def pairAnonymous(username: String): Future[String] =
+    isPaired(username).flatMap{
+      case true => throw new Throwable(s"$username is already paired")
+      case false =>
+      findFreePlayer.flatMap { fp =>
+        pairWith(username, fp).map {
+          case true => fp
+          case false => throw CustomErrorException("Problem with pair",ErrorCode.ERR_USER_ALREADY_PAIRED)
+        }
       }
     }
 
-  /*
-    returns opponent2
-   */
-  //  def pairAvailable(opponent_1: String): Option[String] = {
-  //    onlinePlayers().map { ls =>
-  //      ls.foreach { e =>
-  //        SessionManager.get(e).map { cdOp =>
-  //          cdOp.map { cd =>
-  //            if (!cd.opponent.isDefined) {
-  //              //todo : pair players
-  //            }
-  //          }
-  //        }
-  //      }
-  //    }
+  def getFromMemory(username: String,key: String): Future[Option[String]] =
+    get(username).map { cdOp =>
+        cdOp.flatMap{cd =>
+          cd.memory.flatMap{mem =>
+            mem.get(key)
+          }
+        }
+      }
 
 
   def main(args: Array[String]) {
-    val c = s"""{"token":"123456","memory":{"a":"aa","b":"bb"}}"""
+    val c = """{"sessionId":"123456","memory":{"a":"aa","b":"bb"}}"""
     println(CacheData.fmtJson.reads(Json.parse(c)))
 
-    SessionManager.store("a", CacheData.fmtJson.reads(Json.parse(c)).get)
-    SessionManager.store("b", CacheData.fmtJson.reads(Json.parse(c)).get)
-    SessionManager.store("c", CacheData("", Some("b"), None))
-    SessionManager.store("d", CacheData.fmtJson.reads(Json.parse(c)).get)
-    SessionManager.store("e", CacheData.fmtJson.reads(Json.parse(c)).get)
-    SessionManager.store("avv", CacheData("", Some("d"), None))
-    SessionManager.store("adds", CacheData.fmtJson.reads(Json.parse(c)).get)
-    SessionManager.store("arrr", CacheData.fmtJson.reads(Json.parse(c)).get)
+    Await.result(SessionManager.store("a", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
+    Await.result(SessionManager.store("b", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
+    Await.result(SessionManager.store("c", CacheData("", Some("b"), None)), Duration("5 second"))
+    Await.result(SessionManager.store("d", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
+    Await.result(SessionManager.store("e", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
+    Await.result(SessionManager.store("avv", CacheData("", Some("d"), None)), Duration("5 second"))
+    Await.result(SessionManager.store("adds", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
+    Await.result(SessionManager.store("arrr", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
     println(Await.result(SessionManager.onlinePlayers(), Duration("5 second")))
     println(Await.result(SessionManager.isPaired("arrr"), Duration("5 second")))
     println(Await.result(SessionManager.unPairedPlayers, Duration("5 second")))
     println(Await.result(SessionManager.findFreePlayer, Duration("5 second")))
+    println(Await.result(SessionManager.pairAnonymous("d"),Duration("5 second")))
+    println(Await.result(SessionManager.pairWith("e","adds"),Duration("5 second")))
+    println(Await.result(SessionManager.get("e"), Duration("5 second")))
+    println(Await.result(SessionManager.getFromMemory("a","b"), Duration("5 second")))
   }
 
 }
