@@ -27,10 +27,10 @@ object TokenManager {
 		}
 	}
 
-	def parseTokenClaimNickname(jwt: String) : Option[String]  = {
+	def parseTokenClaimUsername(jwt: String) : Option[String]  = {
 		 jwt match {
 			case JsonWebToken(header, claimsSet, signature) =>
-				Some(claimsSet.asSimpleMap.get("n"))
+				Some(claimsSet.asSimpleMap.get("u"))
 			case x =>
 				None
 		}

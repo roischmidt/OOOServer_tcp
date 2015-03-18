@@ -139,27 +139,4 @@ object SessionManager {
         }
       }
 
-
-  def main(args: Array[String]) {
-    val c = """{"sessionId":"123456","memory":{"a":"aa","b":"bb"}}"""
-    println(CacheData.fmtJson.reads(Json.parse(c)))
-
-    Await.result(SessionManager.store("a", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    Await.result(SessionManager.store("b", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    Await.result(SessionManager.store("c", CacheData("", Some("b"), None)), Duration("5 second"))
-    Await.result(SessionManager.store("d", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    Await.result(SessionManager.store("e", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    Await.result(SessionManager.store("avv", CacheData("", Some("d"), None)), Duration("5 second"))
-    Await.result(SessionManager.store("adds", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    Await.result(SessionManager.store("arrr", CacheData.fmtJson.reads(Json.parse(c)).get), Duration("5 second"))
-    println(Await.result(SessionManager.onlinePlayers(), Duration("5 second")))
-    println(Await.result(SessionManager.isPaired("arrr"), Duration("5 second")))
-    println(Await.result(SessionManager.unPairedPlayers, Duration("5 second")))
-    println(Await.result(SessionManager.findFreePlayer, Duration("5 second")))
-    println(Await.result(SessionManager.pairAnonymous("d"),Duration("5 second")))
-    println(Await.result(SessionManager.pairWith("e","adds"),Duration("5 second")))
-    println(Await.result(SessionManager.get("e"), Duration("5 second")))
-    println(Await.result(SessionManager.getFromMemory("a","b"), Duration("5 second")))
-  }
-
 }
