@@ -100,7 +100,7 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
       SessionManager.store("test4", CacheData("1234", None,None)).futureValue shouldBe true
       SessionManager.store("test5", CacheData("1234", Some("test6"),None)).futureValue shouldBe true
       SessionManager.store("test6", CacheData("1234", Some("test5"),None)).futureValue shouldBe true
-      SessionManager.unPairedPlayers().futureValue.sorted shouldBe "test2"::"test4"::Nil
+      SessionManager.freePlayerList().futureValue.sorted shouldBe "test2"::"test4"::Nil
     }
 
     it("find free player") {
@@ -134,6 +134,17 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
         Await.result(SessionManager.pairWith("test2","test1"), Duration("5 second"))
       }
       assert(thrown.code === ErrorCode.ERR_USER_ALREADY_PAIRED)
+    }
+
+    it("unpair players"){
+      SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
+      SessionManager.pairWith("test","test1").futureValue shouldBe true
+      SessionManager.get("test").futureValue shouldBe Some(CacheData("1234", Some("test1"),None))
+      SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", Some("test"),None))
+      SessionManager.unpairPlayer("test1").futureValue shouldBe Some("test")
+      SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", None,None))
+
     }
   }
 }

@@ -15,6 +15,8 @@ class TokenManagerSpec extends FunSpec with Matchers{
     }
 
     it("Token parsing"){
+      val token = TokenManager.createToke("test")
+      TokenManager.parseTokenClaimUsername(token) shouldBe Some("test")
       val token = TokenManager.createToken("test")
       TokenManager.parseTokenClaimUsername(token) shouldBe Some("test")
     }
