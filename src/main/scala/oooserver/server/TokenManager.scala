@@ -14,7 +14,7 @@ object TokenManager {
 
 	final lazy val secretKey = UUID.randomUUID().toString
 
-	def createToke(username: String) : String = {
+	def createToken(username: String) : String = {
 		JsonWebToken(JwtHeader("HS256"), JwtClaimsSet(Map("u" -> username)), secretKey)
 	}
 
