@@ -7,6 +7,7 @@ object ErrorCode {
 	final val ERR_USER_ALREADY_PAIRED = 1
 	final val ERR_USER_OFFLINE = 2
 	final val ERR_USER_ALREADY_EXISTS = 3
+	final val ERR_NO_AVAILABLE_PLAYERS = 4
 
 }
 
