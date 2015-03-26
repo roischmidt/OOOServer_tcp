@@ -18,7 +18,7 @@ object PairRequest {
 /*
 	available ERRORS
 	ERR_SYSTEM : in case of unknown exception
-	ERR_USER_ALREADY_PAIRED : in case that requested opponent already occupied
+	ERR_OPPONENT_OCCUPIED : in case that requested opponent already occupied
 	ERR_NO_AVAILABLE_PLAYERS : no free player to pair with
  */
 
@@ -51,7 +51,7 @@ case class PairApprovalRequest(
 /*
 	available ERRORS
 	ERR_SYSTEM : in case of unknown exception
-	ERR_USER_ALREADY_PAIRED : opponent have been paired to another user before I had the chance to approve
+	ERR_OPPONENT_OCCUPIED : opponent have been paired to another user before I had the chance to approve
  */
 
 

@@ -3,11 +3,13 @@ package oooserver.server.api
 import play.api.libs.json.Json
 
 object ErrorCode {
-	final val ERR_SYSTEM = 0
-	final val ERR_USER_ALREADY_PAIRED = 1
-	final val ERR_USER_OFFLINE = 2
-	final val ERR_USER_ALREADY_EXISTS = 3
-	final val ERR_NO_AVAILABLE_PLAYERS = 4
+	final val ERR_OK = 0
+	final val ERR_SYSTEM = 1
+	final val ERR_OPPONENT_OCCUPIED = 2
+	final val ERR_USER_OFFLINE = 3
+	final val ERR_USER_ALREADY_EXISTS = 4
+	final val ERR_NO_AVAILABLE_PLAYERS = 5
+	final val ERR_NO_OPPONENT = 6
 
 }
 
