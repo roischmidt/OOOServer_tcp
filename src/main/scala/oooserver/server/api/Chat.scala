@@ -11,6 +11,12 @@ object ChatRequest {
 	implicit val fmtJson = Json.format[ChatRequest]
 }
 
+case class ChatResponse(code: Int = ErrorCode.ERR_OK) extends EmptyResponse
+
+object ChatResponse {
+    implicit val fmtJson = Json.format[ChatResponse]
+}
+
 case class ChatNotification(
 	msg: String
 )

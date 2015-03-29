@@ -18,12 +18,12 @@ object StoreDataRequest {
  * return the number of successful stored fields
  * @param numOfStoredFields
  */
-case class StoreDateResponse(
+case class StoraDateResponse(
 	numOfStoredFields: Int
 )
 
-object StoreDateResponse {
-	implicit val fmtJson = Json.format[StoreDateResponse]
+object StoraDateResponse {
+	implicit val fmtJson = Json.format[StoraDateResponse]
 }
 
 
@@ -48,12 +48,12 @@ object GetDataRequest {
  * return the stored data. None if empty
  * @param data
  */
-case class getDataResponse(
+case class GetDataResponse(
 	data: Option[Map[String, String]]
 )
 
-object getDataResponse {
-	implicit val fmtJson = Json.format[getDataResponse]
+object GetDataResponse {
+	implicit val fmtJson = Json.format[GetDataResponse]
 }
 
 

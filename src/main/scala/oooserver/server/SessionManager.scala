@@ -69,7 +69,7 @@ object SessionManager {
     // check if a user is already paired to another
     def isPaired(username: String): Future[Boolean] =
         get(username).map { cdOpt =>
-            cdOpt.exists(cd => cd.opponent.isDefined)
+            cdOpt.exists(cd => cd.opponent.isDefined && cd.opponent.get.nonEmpty)
         }
 
     // returns the online player list
@@ -92,9 +92,17 @@ object SessionManager {
         }
 
     // find random free player
-    def findFreePlayer(): Future[String] =
+    def findFreePlayer(usernameToExclude: Option[String] = None): Future[Option[String]] =
         freePlayerList.map { pp =>
-            pp.head
+                usernameToExclude.map{ username=>
+                    username == pp.head match{
+                        case true => pp.size > 1 match {
+                            case true => Some(pp(1))
+                            case false => throw CustomErrorException("No free player",ErrorCode.ERR_SYSTEM)
+                        }
+                        case false => Some(pp.head)
+                    }
+                }.getOrElse(None)
         }
 
     // set an opponent to a specific player
@@ -116,9 +124,9 @@ object SessionManager {
     // pair 2 players
     def pairWith(op1: String, op2: String): Future[Boolean] =
         isPaired(op1).flatMap {
-            case true => throw CustomErrorException(s"$op1 is already paired", ErrorCode.ERR_USER_ALREADY_PAIRED)
+            case true => throw CustomErrorException(s"$op1 is already paired", ErrorCode.ERR_OPPONENT_OCCUPIED)
             case false => isPaired(op2).flatMap {
-                case true => throw CustomErrorException(s"$op2 is already paired", ErrorCode.ERR_USER_ALREADY_PAIRED)
+                case true => throw CustomErrorException(s"$op2 is already paired", ErrorCode.ERR_OPPONENT_OCCUPIED)
                 case false =>
                     setOpponent(op1, op2).flatMap {
                         case true => setOpponent(op2, op1)
@@ -133,14 +141,14 @@ object SessionManager {
         isPaired(username).flatMap {
             case true => throw new Throwable(s"$username is already paired")
             case false =>
-                findFreePlayer.flatMap { fp =>
-                    pairWith(username, fp).map {
-                        case true => fp
-                        case false => throw CustomErrorException("Problem with pair", ErrorCode.ERR_USER_ALREADY_PAIRED)
-                    }.recoverWith {
-                        case e: Throwable => throw e
+                    findFreePlayer(Some(username)).flatMap { fp =>
+                        pairWith(username, fp.get).map {
+                            case true => fp.get
+                            case false => throw CustomErrorException("Problem with pair", ErrorCode.ERR_OPPONENT_OCCUPIED)
+                        }.recoverWith {
+                            case e: Throwable => throw e
+                        }
                     }
-                }
         }
 
     // unpair a player from his opponent

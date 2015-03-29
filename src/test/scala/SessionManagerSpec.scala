@@ -45,17 +45,6 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
     }
     /*
 
-
-  def pairWith(op1: String, op2: String): Future[Boolean] =
-    isPaired(op1).flatMap{
-      case true => throw new Throwable(s"$op1 is already paired")
-      case false =>
-      setOpponent(op1, op2).flatMap {
-        case true => setOpponent(op2, op1)
-        case false => Future.successful(false)
-      }
-    }
-
   def pairAnonymous(username: String): Future[String] =
     isPaired(username).flatMap{
       case true => throw new Throwable(s"$username is already paired")
@@ -133,7 +122,7 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
       val thrown = intercept[CustomErrorException] {
         Await.result(SessionManager.pairWith("test2","test1"), Duration("5 second"))
       }
-      assert(thrown.code === ErrorCode.ERR_USER_ALREADY_PAIRED)
+      assert(thrown.code === ErrorCode.ERR_OPPONENT_OCCUPIED)
     }
 
     it("unpair players"){
@@ -144,7 +133,11 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
       SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", Some("test"),None))
       SessionManager.unpairPlayer("test1").futureValue shouldBe Some("test")
       SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", None,None))
-
     }
+      it("pair anonymous"){
+          SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
+          SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
+         SessionManager.pairAnonymous("test1").futureValue shouldBe "test"
+      }
   }
 }

@@ -1,5 +1,6 @@
 package oooserver.server.api
 
+import oooserver.server.util.EnumJson
 import play.api.libs.json.Json
 
 object ErrorCode {
