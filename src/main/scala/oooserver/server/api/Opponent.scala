@@ -14,6 +14,15 @@ object NotifyOpponentRequest {
 	implicit val fmtJson = Json.format[NotifyOpponentRequest]
 }
 
+case class NotifyOpponentResponse(
+	reason: Int // can be ERR_USER_OFFLINE : user disconnected. ERR_NO_OPPONENT : user decided to leave
+)
+
+object NotifyOpponentResponse {
+	implicit val fmtJson = Json.format[NotifyOpponentResponse]
+}
+
+
 /*
 	available ERRORS
 	ERR_SYSTEM : in case of unknown exception

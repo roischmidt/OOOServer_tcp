@@ -12,6 +12,14 @@ object LogoutRequest{
 	implicit val fmtJson = Json.format[LogoutRequest]
 }
 
+case class LogoutResponse(
+	reason: Int // can be ERR_USER_OFFLINE : user disconnected. ERR_NO_OPPONENT : user decided to leave
+)
+
+object LogoutResponse {
+	implicit val fmtJson = Json.format[LogoutResponse]
+}
+
 
 /*
 	available ERRORS
