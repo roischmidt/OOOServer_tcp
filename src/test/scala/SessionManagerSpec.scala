@@ -96,7 +96,7 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
       SessionManager.store("test", CacheData("1234", Some("test3"), None)).futureValue shouldBe true
       SessionManager.store("test2", CacheData("1234", None, None)).futureValue shouldBe true
       SessionManager.store("test3", CacheData("1234", Some("test1"), None)).futureValue shouldBe true
-      SessionManager.findFreePlayer().futureValue shouldBe "test2"
+      SessionManager.findFreePlayer().futureValue shouldBe Some("test2")
     }
 
     it("Set opponent"){

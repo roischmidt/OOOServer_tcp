@@ -102,7 +102,7 @@ object SessionManager {
                         }
                         case false => Some(pp.head)
                     }
-                }.getOrElse(None)
+                }.getOrElse(Some(pp.head))
         }
 
     // set an opponent to a specific player
