@@ -11,7 +11,7 @@ object ErrorCode {
 	final val ERR_USER_ALREADY_EXISTS = 4
 	final val ERR_NO_AVAILABLE_PLAYERS = 5
 	final val ERR_NO_OPPONENT = 6
-
+	final val ERR_INVALID_TOKEN = 7
 }
 
 case class CustomErrorException(msg: String, code: Int) extends scala.Throwable {

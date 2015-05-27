@@ -5,6 +5,7 @@ import java.net.InetSocketAddress
 import akka.actor.{Props, Actor, PoisonPill, ActorSystem}
 import akka.io.{Tcp, IO}
 import com.typesafe.config.ConfigFactory
+import oooserver.server.api.MessageBase
 import org.slf4j.LoggerFactory
 
 object Server {
@@ -16,8 +17,12 @@ object Server {
 	val serverBindAddress = ConfigFactory.load.getString("OOOServer.server-bind-address")
 	val port = ConfigFactory.load.getString("OOOServer.port").toInt
 
+	val zserver = system.actorOf(Props(classOf[Controller]))
+
+	def send(sessionId: String, message : MessageBase)  = ???
+
 	def main(args: Array[String]) {
-		val zserver = system.actorOf(Props(classOf[Controller]))
+
 		IO(Tcp) ! Tcp.Bind(zserver, new InetSocketAddress(serverBindAddress,port))
 		logger.info(s"server has started on port:$port")
 
