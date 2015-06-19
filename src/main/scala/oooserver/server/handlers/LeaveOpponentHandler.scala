@@ -16,7 +16,7 @@ object LeaveOpponentHandler extends BaseHandler[LeaveOpponentRequest,LeaveOppone
 			case Some(username) =>
 				SessionManager.unpairPlayer(username).flatMap{
 					case Some(opName) =>
-						SessionManager.get(opName).map {
+						SessionManager.getData(opName).map {
 							case Some(cd) =>
 								Server.send(cd.sessionId,LeaveNotification(username,"User left"))
 								LeaveOpponentResponse(opName)

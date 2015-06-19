@@ -58,7 +58,7 @@ object SessionManager {
         client.exists(key)
 
     // get UserData object
-    def get(username: String): Future[Option[UserData]] =
+    def getData(username: String): Future[Option[UserData]] =
         client.get(username).map(_.map(userData =>
             UserData.fmtJson.reads(Json.parse(userData.asInstanceOf[String])) match {
                 case JsSuccess(dataObj, _) => Some(dataObj)
@@ -67,7 +67,7 @@ object SessionManager {
 
     // check if a user is already paired to another
     def isPaired(username: String): Future[Boolean] =
-        get(username).map(_.exists(_.opponent.isDefined))
+        getData(username).map(_.exists(_.opponent.isDefined))
 
     // returns the online player list
     def onlinePlayers(): Future[List[String]] =
@@ -95,7 +95,7 @@ object SessionManager {
 
     // set an opponent to a specific player
     def setOpponent(username: String, opName: String): Future[Boolean] =
-        get(username).flatMap (_.map { d =>
+        getData(username).flatMap (_.map { d =>
             d.opponent.isDefined match {
                 case true =>
                     logger.info(s"Can't Pair $username with $opName because $opName is already paired with ${d.opponent.get}")
@@ -105,6 +105,10 @@ object SessionManager {
                     store(username, d.copy(opponent = Some(opName)))
             }
         }.getOrElse(Future.successful(false)))
+
+    //get the opponent name if exists
+    def getOpponentName(username: String) : Future[Option[String]] =
+        getData(username).map(_.map(_.opponent).getOrElse(None))
 
     // pair 2 players
     def pairWith(op1: String, op2: String): Future[Boolean] =
@@ -134,10 +138,10 @@ object SessionManager {
 
     // unpair a player from his opponent
     def unpairPlayer(username: String): Future[Option[String]] =
-        get(username).flatMap {
+        getData(username).flatMap {
             case Some(ud) => ud.opponent.map { opName =>
                 store(username,ud.copy(opponent = None)).flatMap(_ =>
-                    get(opName).flatMap(_.map{opData =>
+                    getData(opName).flatMap(_.map{opData =>
                         store(opName,opData.copy(opponent = None)).map{_ => Some(opName)}
                     }.getOrElse(Future.successful(None))))
             }.getOrElse(Future.successful(None))
@@ -149,7 +153,7 @@ object SessionManager {
 
     // get memory data from a player's CacheData object
     def getFromMemory(username: String, key: String): Future[Option[String]] =
-        get(username).map {
+        getData(username).map {
             _.map {
                 _.memory.get(key)
             }
