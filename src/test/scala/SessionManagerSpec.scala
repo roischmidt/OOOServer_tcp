@@ -1,5 +1,5 @@
 import oooserver.server.api.{ErrorCode, CustomErrorException}
-import oooserver.server.{CacheData, SessionManager}
+import oooserver.server.{UserData, UserData$, SessionManager}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}
 
@@ -15,27 +15,27 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
   describe("SessionManager test") {
 
     it("store") {
-      SessionManager.store("test", CacheData("johnDoe", Some("op"),None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("johnDoe", Some("op"),None)).futureValue shouldBe true
     }
 
     it("get") {
-      SessionManager.store("test", CacheData("johnDoe", Some("op"),None)).futureValue shouldBe true
-      SessionManager.get("test").futureValue shouldBe Some(CacheData("johnDoe", Some("op"),None))
+      SessionManager.store("test", UserData("johnDoe", Some("op"),None)).futureValue shouldBe true
+      SessionManager.get("test").futureValue shouldBe Some(UserData("johnDoe", Some("op"),None))
     }
 
     it("exists"){
-      SessionManager.store("test", CacheData("johnDoe", Some("op"),None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("johnDoe", Some("op"),None)).futureValue shouldBe true
       SessionManager.exists("test").futureValue shouldBe true
     }
 
     it("Store with expiration") {
-      SessionManager.storeEx("test", 1, CacheData("johnDoe", Some("op"),None)).futureValue shouldBe true
+      SessionManager.storeEx("test", 1, UserData("johnDoe", Some("op"),None)).futureValue shouldBe true
       Thread sleep 1000
       SessionManager.get("test1").futureValue shouldBe None
     }
 
     it("Resume"){
-      SessionManager.storeEx("test", 1, CacheData("johnDoe", Some("op"),None)).futureValue shouldBe true
+      SessionManager.storeEx("test", 1, UserData("johnDoe", Some("op"),None)).futureValue shouldBe true
       Thread sleep 200
       SessionManager.resume("test",1) // should expire in 1 second
       Thread sleep 900
@@ -67,77 +67,74 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
       }
      */
     it("is palyer paired"){
-      SessionManager.store("test", CacheData("1234", Some("op"),None)).futureValue shouldBe true
-      SessionManager.store("test2", CacheData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", Some("op"),None)).futureValue shouldBe true
+      SessionManager.store("test2", UserData("1234", None,None)).futureValue shouldBe true
       SessionManager.isPaired("test").futureValue shouldBe true
       SessionManager.isPaired("test2").futureValue shouldBe false
     }
 
     it("online players"){
-      SessionManager.store("test", CacheData("1234", None,None)).futureValue shouldBe true
-      SessionManager.store("test2", CacheData("1234", None,None)).futureValue shouldBe true
-      SessionManager.store("test3", CacheData("1234", None,None)).futureValue shouldBe true
-      SessionManager.store("test4", CacheData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test2", UserData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test3", UserData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test4", UserData("1234", None,None)).futureValue shouldBe true
       SessionManager.onlinePlayers().futureValue.sorted shouldBe "test"::"test2"::"test3"::"test4"::Nil
 
     }
 
     it("unpaired player list"){
-      SessionManager.store("test", CacheData("1234", Some("test3"),None)).futureValue shouldBe true
-      SessionManager.store("test2", CacheData("1234", None,None)).futureValue shouldBe true
-      SessionManager.store("test3", CacheData("1234", Some("test1"),None)).futureValue shouldBe true
-      SessionManager.store("test4", CacheData("1234", None,None)).futureValue shouldBe true
-      SessionManager.store("test5", CacheData("1234", Some("test6"),None)).futureValue shouldBe true
-      SessionManager.store("test6", CacheData("1234", Some("test5"),None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", Some("test3"),None)).futureValue shouldBe true
+      SessionManager.store("test2", UserData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test3", UserData("1234", Some("test1"),None)).futureValue shouldBe true
+      SessionManager.store("test4", UserData("1234", None,None)).futureValue shouldBe true
+      SessionManager.store("test5", UserData("1234", Some("test6"),None)).futureValue shouldBe true
+      SessionManager.store("test6", UserData("1234", Some("test5"),None)).futureValue shouldBe true
       SessionManager.freePlayerList().futureValue.sorted shouldBe "test2"::"test4"::Nil
     }
 
     it("find free player") {
-      SessionManager.store("test", CacheData("1234", Some("test3"), None)).futureValue shouldBe true
-      SessionManager.store("test2", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test3", CacheData("1234", Some("test1"), None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", Some("test3"), None)).futureValue shouldBe true
+      SessionManager.store("test2", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test3", UserData("1234", Some("test1"), None)).futureValue shouldBe true
       SessionManager.findFreePlayer().futureValue shouldBe Some("test2")
     }
 
     it("Set opponent"){
-      SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test1", CacheData("1234", Some("test1"), None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test1", UserData("1234", Some("test1"), None)).futureValue shouldBe true
       SessionManager.setOpponent("test","test1").futureValue shouldBe true
-      SessionManager.get("test").futureValue shouldBe Some(CacheData("1234", Some("test1"),None))
+      SessionManager.get("test").futureValue shouldBe Some(UserData("1234", Some("test1"),None))
     }
 
     it("pair 2 players"){
-      SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test1", UserData("1234", None, None)).futureValue shouldBe true
       SessionManager.pairWith("test","test1").futureValue shouldBe true
-      SessionManager.get("test").futureValue shouldBe Some(CacheData("1234", Some("test1"),None))
-      SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", Some("test"),None))
+      SessionManager.get("test").futureValue shouldBe Some(UserData("1234", Some("test1"),None))
+      SessionManager.get("test1").futureValue shouldBe Some(UserData("1234", Some("test"),None))
     }
 
     it("try to pair 2 players when one of them is already paired"){
-      SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test2", CacheData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test1", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test2", UserData("1234", None, None)).futureValue shouldBe true
       SessionManager.pairWith("test","test1").futureValue shouldBe true
-      val thrown = intercept[CustomErrorException] {
-        Await.result(SessionManager.pairWith("test2","test1"), Duration("5 second"))
-      }
-      assert(thrown.code === ErrorCode.ERR_OPPONENT_OCCUPIED)
+      SessionManager.pairWith("test2","test1").futureValue shouldBe false
     }
 
     it("unpair players"){
-      SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
-      SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test", UserData("1234", None, None)).futureValue shouldBe true
+      SessionManager.store("test1", UserData("1234", None, None)).futureValue shouldBe true
       SessionManager.pairWith("test","test1").futureValue shouldBe true
-      SessionManager.get("test").futureValue shouldBe Some(CacheData("1234", Some("test1"),None))
-      SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", Some("test"),None))
+      SessionManager.get("test").futureValue shouldBe Some(UserData("1234", Some("test1"),None))
+      SessionManager.get("test1").futureValue shouldBe Some(UserData("1234", Some("test"),None))
       SessionManager.unpairPlayer("test1").futureValue shouldBe Some("test")
-      SessionManager.get("test1").futureValue shouldBe Some(CacheData("1234", None,None))
+      SessionManager.get("test1").futureValue shouldBe Some(UserData("1234", None,None))
     }
       it("pair anonymous"){
-          SessionManager.store("test", CacheData("1234", None, None)).futureValue shouldBe true
-          SessionManager.store("test1", CacheData("1234", None, None)).futureValue shouldBe true
-         SessionManager.pairAnonymous("test1").futureValue shouldBe "test"
+          SessionManager.store("test", UserData("1234", None, None)).futureValue shouldBe true
+          SessionManager.store("test1", UserData("1234", None, None)).futureValue shouldBe true
+         SessionManager.pairAnonymous("test1").futureValue shouldBe Some("test")
       }
   }
 }

@@ -1,3 +1,4 @@
+import com.typesafe.config.ConfigFactory
 import oooserver.server.TokenManager
 import org.scalatest.{Matchers, FunSpec}
 

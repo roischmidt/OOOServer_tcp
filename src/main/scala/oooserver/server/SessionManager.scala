@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
+import com.typesafe.config.ConfigFactory
 import oooserver.server.api.{CustomErrorException, ErrorCode}
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsSuccess, Json}
@@ -13,14 +14,14 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-case class CacheData(
-    sessionId: String,
-    opponent: Option[String],
-    memory: Option[Map[String, String]]
-)
+case class UserData(
+        sessionId: String, // the session of the connection
+        opponent: Option[String],
+        memory: Option[Map[String, String]] // any data that needs to be saved
+        )
 
-object CacheData {
-    implicit val fmtJson = Json.format[CacheData]
+object UserData {
+    implicit val fmtJson = Json.format[UserData]
 }
 
 object SessionManager {
@@ -35,17 +36,17 @@ object SessionManager {
     implicit val timeout = Timeout(5 seconds)
 
     // Redis client setup
-    val client = RedisClient("localhost", 6379)
+    val client = RedisClient(ConfigFactory.load.getString("OOOServer.redis.host"), ConfigFactory.load.getInt("OOOServer.redis.port"))
 
     // clear all DB
     def clearAll() = client.flushdb()
 
     // store CacheData object
-    def store(key: String, value: CacheData): Future[Boolean] =
+    def store(key: String, value: UserData): Future[Boolean] =
         storeEx(key, expired, value)
 
     // store CacheData object with provided expiration
-    def storeEx(key: String, expire: Int, value: CacheData): Future[Boolean] =
+    def storeEx(key: String, expire: Int, value: UserData): Future[Boolean] =
         client.setex(key, expire, Json.toJson(value).toString())
 
     // renew expiration for a specific key
@@ -56,132 +57,101 @@ object SessionManager {
     def exists(key: String): Future[Boolean] =
         client.exists(key)
 
-    // get CacheData object
-    def get(username: String): Future[Option[CacheData]] =
-        client.get(username).map {
-            case Some(x) => CacheData.fmtJson.reads(Json.parse(x.asInstanceOf[String])) match {
-                case JsSuccess(d, _) => Some(d)
-                case _ => throw CustomErrorException("Couldn't parse cached data", ErrorCode.ERR_SYSTEM)
-            }
-            case None => None
-        }
+    // get UserData object
+    def get(username: String): Future[Option[UserData]] =
+        client.get(username).map(_.map(userData =>
+            UserData.fmtJson.reads(Json.parse(userData.asInstanceOf[String])) match {
+                case JsSuccess(dataObj, _) => Some(dataObj)
+                case _ => None
+            }).getOrElse(None))
 
     // check if a user is already paired to another
     def isPaired(username: String): Future[Boolean] =
-        get(username).map { cdOpt =>
-            cdOpt.exists(cd => cd.opponent.isDefined && cd.opponent.get.nonEmpty)
-        }
+        get(username).map(_.exists(_.opponent.isDefined))
 
     // returns the online player list
-    def onlinePlayers(): Future[List[String]] = {
+    def onlinePlayers(): Future[List[String]] =
         client.keys()
-    }
 
     // returns the free player list
     def freePlayerList(): Future[List[String]] =
-        onlinePlayers().flatMap { op =>
-            Future.sequence(op.map {
-                case username =>
-                    isPaired(username).map {
-                        case true => ""
-                        case false => username
-                    }
-            }).map {
-                res => res.filter(op => op.nonEmpty)
-            }
-        }
+      onlinePlayers().flatMap { onlinePlayers =>
+          Future.sequence( onlinePlayers.map { username =>
+              isPaired(username).map {
+                  case true => ""
+                  case false => username
+              }
+          }).map(_.filter(_.nonEmpty))
+      }
 
     // find random free player
     def findFreePlayer(usernameToExclude: Option[String] = None): Future[Option[String]] =
-        freePlayerList.map { pp =>
-                usernameToExclude.map{ username=>
-                    username == pp.head match{
-                        case true => pp.size > 1 match {
-                            case true => Some(pp(1))
-                            case false => throw CustomErrorException("No free player",ErrorCode.ERR_SYSTEM)
-                        }
-                        case false => Some(pp.head)
-                    }
-                }.getOrElse(Some(pp.head))
+        freePlayerList().map {
+            _.filterNot(usernameToExclude.contains(_)) match {
+                case ls@x::Nil => Some(ls.head)
+                case Nil => None
+            }
         }
 
     // set an opponent to a specific player
     def setOpponent(username: String, opName: String): Future[Boolean] =
-        get(username).flatMap { cdOp =>
-            cdOp.map { cd =>
-                cd.opponent.isDefined match {
-                    case true =>
-                        logger.info(s"Can't Pair $username with $opName because $opName is alredy paired with ${cd.opponent.get}")
-                        Future.successful(false)
-                    case false =>
-                        logger.info(s"Pairing $username with $opName")
-                        store(username, cd.copy(opponent = Some(opName)))
-                }
-            }.getOrElse(Future.successful(false))
-
-        }
+        get(username).flatMap (_.map { d =>
+            d.opponent.isDefined match {
+                case true =>
+                    logger.info(s"Can't Pair $username with $opName because $opName is already paired with ${d.opponent.get}")
+                    Future.successful(false)
+                case false =>
+                    logger.info(s"Pairing $username with $opName")
+                    store(username, d.copy(opponent = Some(opName)))
+            }
+        }.getOrElse(Future.successful(false)))
 
     // pair 2 players
     def pairWith(op1: String, op2: String): Future[Boolean] =
-        isPaired(op1).flatMap {
-            case true => throw CustomErrorException(s"$op1 is already paired", ErrorCode.ERR_OPPONENT_OCCUPIED)
-            case false => isPaired(op2).flatMap {
-                case true => throw CustomErrorException(s"$op2 is already paired", ErrorCode.ERR_OPPONENT_OCCUPIED)
-                case false =>
-                    setOpponent(op1, op2).flatMap {
-                        case true => setOpponent(op2, op1)
-                        case false => Future.successful(false)
-                    }
-            }
-
-        }
+      for {
+          p1 <- setOpponent(op1, op2)
+          p2 <- setOpponent(op2, op1)
+      } yield (p1,p2) match {
+          case (true,true) =>
+              true
+          case _ =>
+              logger.info("One of the players is already paired")
+              false
+      }
 
     // pair a player with random oppnent
-    def pairAnonymous(username: String): Future[String] =
-        isPaired(username).flatMap {
-            case true => throw new Throwable(s"$username is already paired")
-            case false =>
-                    findFreePlayer(Some(username)).flatMap { fp =>
-                        pairWith(username, fp.get).map {
-                            case true => fp.get
-                            case false => throw CustomErrorException("Problem with pair", ErrorCode.ERR_OPPONENT_OCCUPIED)
-                        }.recoverWith {
-                            case e: Throwable => throw e
-                        }
-                    }
+    def pairAnonymous(username: String): Future[Option[String]] =
+        findFreePlayer(Some(username)).flatMap{
+           _.map { op =>
+               pairWith(username,op).map {
+                   case true => Some(op)
+                   case false =>
+                       logger.info(s"couldn't pair $username with $op")
+                       None
+               }
+           }.getOrElse(Future.successful(None))
         }
 
     // unpair a player from his opponent
     def unpairPlayer(username: String): Future[Option[String]] =
-        get(username).flatMap { cdOp =>
-            cdOp.isDefined match {
-                case true => store(username, cdOp.get.copy(opponent = None)).flatMap {
-                    case true =>
-                        cdOp.get.opponent.isDefined match {
-                            case true =>
-                                get(cdOp.get.opponent.get).flatMap { cdOp2 =>
-                                    cdOp2.isDefined match {
-                                        case true => store(cdOp.get.opponent.get, cdOp2.get.copy(opponent = None)).map { _ => cdOp.get.opponent }
-                                        case false => Future.successful(cdOp.get.opponent)
-                                    }
-                                }
-                            case false => Future.successful(None)
-                        }
+        get(username).flatMap {
+            case Some(ud) => ud.opponent.map { opName =>
+                store(username,ud.copy(opponent = None)).flatMap(_ =>
+                    get(opName).flatMap(_.map{opData =>
+                        store(opName,opData.copy(opponent = None)).map{_ => Some(opName)}
+                    }.getOrElse(Future.successful(None))))
+            }.getOrElse(Future.successful(None))
 
-                    case false => throw CustomErrorException("Unpair error", ErrorCode.ERR_SYSTEM)
-                }
-                case false => throw CustomErrorException(s"$username not found", ErrorCode.ERR_USER_OFFLINE)
-            }
+            case None =>
+                logger.info(s"$username not found")
+                Future.successful(None)
         }
 
     // get memory data from a player's CacheData object
     def getFromMemory(username: String, key: String): Future[Option[String]] =
-        get(username).map { cdOp =>
-            cdOp.flatMap { cd =>
-                cd.memory.flatMap { mem =>
-                    mem.get(key)
-                }
+        get(username).map {
+            _.map {
+                _.memory.get(key)
             }
         }
-
 }
