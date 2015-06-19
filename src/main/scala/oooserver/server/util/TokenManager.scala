@@ -1,11 +1,8 @@
-package oooserver.server
+package oooserver.server.util
 
 import java.util.UUID
 
-import authentikat.jwt.{JwtClaimsSet, JwtHeader, JsonWebToken}
-import com.fasterxml.jackson.core.JsonParseException
-
-import scala.util.Try
+import authentikat.jwt.{JsonWebToken, JwtClaimsSet, JwtHeader}
 
 /**
  * Created by rois on 2/21/15.

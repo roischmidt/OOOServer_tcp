@@ -1,4 +1,4 @@
-package oooserver.server
+package oooserver.server.util
 
 import java.util.concurrent.TimeUnit
 
@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
-import oooserver.server.api.{CustomErrorException, ErrorCode}
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsSuccess, Json}
 

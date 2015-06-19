@@ -1,5 +1,5 @@
 import com.typesafe.config.ConfigFactory
-import oooserver.server.TokenManager
+import oooserver.server.util.TokenManager
 import org.scalatest.{Matchers, FunSpec}
 
 class TokenManagerSpec extends FunSpec with Matchers{

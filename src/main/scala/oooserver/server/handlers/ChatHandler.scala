@@ -1,7 +1,7 @@
 package oooserver.server.handlers
 
-import oooserver.server.{SessionManager, TokenManager}
 import oooserver.server.api.{ChatResponse, ChatRequest}
+import oooserver.server.util.TokenManager
 
 import scala.concurrent.Future
 

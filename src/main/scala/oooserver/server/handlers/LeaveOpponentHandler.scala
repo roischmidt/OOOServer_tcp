@@ -1,6 +1,7 @@
 package oooserver.server.handlers
 
-import oooserver.server.{Server, Controller, TokenManager, SessionManager}
+import oooserver.server.util.{TokenManager, SessionManager}
+import oooserver.server.{Server, Controller}
 import oooserver.server.api._
 
 import scala.concurrent.Future
