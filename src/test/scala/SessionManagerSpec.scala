@@ -45,6 +45,11 @@ class SessionManagerSpec extends FunSpec with Matchers with ScalaFutures with Be
             SessionManager.getOpponentName("test").futureValue shouldBe Some("op")
         }
 
+        it("get sessionId ") {
+            SessionManager.store("test", UserData("1234", Some("op"), None)).futureValue shouldBe true
+            SessionManager.getSessionId("test").futureValue shouldBe Some("1234")
+        }
+
         it("is palyer paired") {
             SessionManager.store("test", UserData("1234", Some("op"), None)).futureValue shouldBe true
             SessionManager.store("test2", UserData("1234", None, None)).futureValue shouldBe true

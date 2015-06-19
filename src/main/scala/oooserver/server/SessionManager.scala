@@ -110,6 +110,10 @@ object SessionManager {
     def getOpponentName(username: String) : Future[Option[String]] =
         getData(username).map(_.map(_.opponent).getOrElse(None))
 
+    //get the sessionId if exists
+    def getSessionId(username: String) : Future[Option[String]] =
+        getData(username).map(_.map(d => Some(d.sessionId)).getOrElse(None))
+
     // pair 2 players
     def pairWith(op1: String, op2: String): Future[Boolean] =
       for {
