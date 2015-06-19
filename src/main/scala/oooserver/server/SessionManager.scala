@@ -121,12 +121,12 @@ object SessionManager {
 
     // pair a player with random oppnent
     def pairAnonymous(username: String): Future[Option[String]] =
-        findFreePlayer(Some(username)).flatMap{
-           _.map { op =>
-               pairWith(username,op).map {
-                   case true => Some(op)
+        findFreePlayer(Some(username)).flatMap{ fpOpt =>
+           fpOpt.map { fp =>
+               pairWith(username,fp).map {
+                   case true => fpOpt
                    case false =>
-                       logger.info(s"couldn't pair $username with $op")
+                       logger.info(s"couldn't pair $username with $fp")
                        None
                }
            }.getOrElse(Future.successful(None))
