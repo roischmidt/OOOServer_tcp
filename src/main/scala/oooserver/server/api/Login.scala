@@ -3,19 +3,21 @@ package oooserver.server.api
 import play.api.libs.json.Json
 
 case class LoginRequest(
-	nickname: String
-)
+    nickname: String,
+    id: Int
+) extends Message(id)
 
-object LoginRequest{
-	implicit val fmtJson = Json.format[LoginRequest]
+object LoginRequest {
+    implicit val fmtJson = Json.format[LoginRequest]
 }
 
 case class LoginResponse(
-	token: String
-)
+    token: String,
+    id: Int = MessageId.LOGIN_RESPONSE
+) extends Message(id)
 
-object LoginResponse{
-	implicit val fmtJson = Json.format[LoginResponse]
+object LoginResponse {
+    implicit val fmtJson = Json.format[LoginResponse]
 }
 
 /*

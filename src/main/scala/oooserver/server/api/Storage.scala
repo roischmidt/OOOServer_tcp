@@ -6,42 +6,37 @@ import play.api.libs.json.Json
  * store data in DB. will be save as long as player is online
  */
 case class StoreDataRequest(
-	token: String,
-	data: Option[Map[String, String]]
-)
+    token: String,
+    data: Option[Map[String, String]],
+    id: Int
+) extends Message(id)
 
 object StoreDataRequest {
-	implicit val fmtJson = Json.format[StoreDataRequest]
+    implicit val fmtJson = Json.format[StoreDataRequest]
 }
 
 /**
  * return the number of successful stored fields
  * @param numOfStoredFields
  */
-case class StoraDateResponse(
-	numOfStoredFields: Int
-)
+case class StoreDateResponse(
+    numOfStoredFields: Int,
+    id: Int = MessageId.STORE_DATA_RESPONSE
+) extends Message(id)
 
-object StoraDateResponse {
-	implicit val fmtJson = Json.format[StoraDateResponse]
+object StoreDateResponse {
+    implicit val fmtJson = Json.format[StoreDateResponse]
 }
-
-
-/*
-	available ERRORS
-	ERR_SYSTEM : in case of unknown exception
- */
-
 
 /**
  * get stored data from DB
  */
 case class GetDataRequest(
-	token: String
+    token: String
 )
 
 object GetDataRequest {
-	implicit val fmtJson = Json.format[GetDataRequest]
+    implicit val fmtJson = Json.format[GetDataRequest]
 }
 
 /**
@@ -49,16 +44,10 @@ object GetDataRequest {
  * @param data
  */
 case class GetDataResponse(
-	data: Option[Map[String, String]]
-)
+    data: Option[Map[String, String]],
+    id: Int = MessageId.GET_DATA_RESPONSE
+) extends Message(id)
 
 object GetDataResponse {
-	implicit val fmtJson = Json.format[GetDataResponse]
+    implicit val fmtJson = Json.format[GetDataResponse]
 }
-
-
-/*
-	available ERRORS
-	ERR_SYSTEM : in case of unknown exception
- */
-

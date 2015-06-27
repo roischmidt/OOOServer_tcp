@@ -1,51 +1,48 @@
 package oooserver.server
 
-import akka.actor.Actor
+import akka.actor.{ActorRef, Actor}
 import akka.io.Tcp
-import akka.io.Tcp._
-
-import akka.util.ByteString
-import oooserver.server.api.MessageBase
+import oooserver.server.api._
+import oooserver.server.handlers.LoginHandler
 import org.slf4j.LoggerFactory
+import play.api.libs.json.{JsError, JsSuccess, Json}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 
 /**
- * Created by rois on 2/19/15.
+ * Created by rois on 6/20/15.
  */
-class Controller extends Actor{
 
-	final val logger = LoggerFactory.getLogger(this.getClass)
+class Controller extends Actor {
 
-	override def receive: Receive = {
-//		case _: Tcp.Connected => sender ! Tcp.Register(self)
-//
-//		case x: Tcp.Message =>
-//		logger.info(x.)
-//		sender ! "Hello"
-		case CommandFailed(_: Connect) =>
-			logger.info("connect failed")
-			context stop self
+    import Tcp._
 
-		case c @ Connected(remote, local) =>
-			logger.info(c.toString)
-			//val zsender = sender()
-			sender ! Register(self)
-			context become {
-				case data: ByteString =>
-					sender() ! Write(data)
-				case CommandFailed(w: Write) =>
-					// O/S buffer was full
-					logger.info("write failed")
-				case Received(data) =>
-					logger.info(data.utf8String)
-					sender() ! "Welcome"
-				case "close" =>
-					sender() ! Close
-				case _: ConnectionClosed =>
-					logger.info("connection closed")
-					context stop self
-			}
-	}
+    final val logger = LoggerFactory.getLogger(this.getClass)
+    var senderA : ActorRef = null
+
+    def receive = {
+        case Received(data) =>
+            logger.info(s"Controller Received ${data.utf8String}")
+            Message.fmtJsonReads.reads(Json.parse({data.utf8String})) match {
+                case JsSuccess(msg,_) => msg match {
+                   // case m : LoginRequest => println("login request arrived")
+                    case _ =>
+
+                        println(s"unhandled message arrived $msg")
+                        //test
+                        Server.sessions.foreach { n =>
+                            n._2 ! "hello"
+                        }
+                }
+                case JsError(e) => logger.warn("unsupported message arrived")
+                    Server.sessions.foreach { n =>
+                        n._2 ! "sorry"
+                    }
+            }
 
 
-
+        case PeerClosed => context stop self
+    }
 }

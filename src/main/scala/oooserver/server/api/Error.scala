@@ -12,6 +12,7 @@ object ErrorCode {
 	final val ERR_NO_AVAILABLE_PLAYERS = 5
 	final val ERR_NO_OPPONENT = 6
 	final val ERR_INVALID_TOKEN = 7
+	final val ERR_BAD_REQUEST = 8
 }
 
 case class CustomErrorException(msg: String, code: Int) extends scala.Throwable {
@@ -26,8 +27,9 @@ object CustomErrorException {
 
 case class ErrorResponse(
 	msg: String,
-	code: Int
-)
+	code: Int,
+	id: Int
+) extends Message(id)
 
 object ErrorResponse{
 	implicit val fmtJson = Json.format[ErrorResponse]

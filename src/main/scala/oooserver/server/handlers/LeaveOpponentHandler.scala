@@ -1,7 +1,7 @@
 package oooserver.server.handlers
 
+import akka.actor.ActorRef
 import oooserver.server.util.{TokenManager, SessionManager}
-import oooserver.server.{Server, Controller}
 import oooserver.server.api._
 
 import scala.concurrent.Future
@@ -12,14 +12,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object LeaveOpponentHandler extends BaseHandler[LeaveOpponentRequest,LeaveOpponentResponse]{
 
-	override def handle(request: LeaveOpponentRequest): Future[LeaveOpponentResponse] =
+	override def handle(request: LeaveOpponentRequest,sender: ActorRef): Future[LeaveOpponentResponse] =
 		TokenManager.parseTokenClaimUsername(request.token) match {
 			case Some(username) =>
 				SessionManager.unpairPlayer(username).flatMap{
 					case Some(opName) =>
 						SessionManager.getData(opName).map {
 							case Some(cd) =>
-								Server.send(cd.sessionId,LeaveNotification(username,"User left"))
+								//Server.send(cd.sessionId,LeaveNotification(username,"User left"))
 								LeaveOpponentResponse(opName)
 						}
 					case None =>

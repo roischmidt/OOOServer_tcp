@@ -1,9 +1,10 @@
 package oooserver.server.handlers
 
-import oooserver.server.api.{StoraDateResponse, StoreDataRequest}
+import akka.actor.ActorRef
+import oooserver.server.api.{StoreDateResponse, StoreDateResponse$, StoreDataRequest}
 
 import scala.concurrent.Future
 
-object DataStoringHandler extends BaseHandler[StoreDataRequest,StoraDateResponse]{
-    override def handle(request: StoreDataRequest): Future[StoraDateResponse] = ???
+object DataStoringHandler extends BaseHandler[StoreDataRequest,StoreDateResponse]{
+    override def handle(request: StoreDataRequest,sender: ActorRef): Future[StoreDateResponse] = ???
 }

@@ -1,23 +1,22 @@
-import com.typesafe.config.ConfigFactory
 import oooserver.server.util.TokenManager
-import org.scalatest.{Matchers, FunSpec}
+import org.scalatest.{FunSpec, Matchers}
 
-class TokenManagerSpec extends FunSpec with Matchers{
+class TokenManagerSpec extends FunSpec with Matchers {
 
-  describe("TokenManager tests"){
+    describe("TokenManager tests") {
 
-    it("Token creation"){
-      TokenManager.createToken("test").size should be > 0
+        it("Token creation") {
+            TokenManager.createToken("test").size should be > 0
+        }
+
+        it("Token validation") {
+            val token = TokenManager.createToken("test")
+            TokenManager.validateToken(token) shouldBe true
+        }
+
+        it("Token parsing") {
+            val token = TokenManager.createToken("test")
+            TokenManager.parseTokenClaimUsername(token) shouldBe Some("test")
+        }
     }
-
-    it("Token validation"){
-      val token = TokenManager.createToken("test")
-      TokenManager.validateToken(token) shouldBe true
-    }
-
-    it("Token parsing"){
-      val token = TokenManager.createToken("test")
-      TokenManager.parseTokenClaimUsername(token) shouldBe Some("test")
-    }
-  }
 }

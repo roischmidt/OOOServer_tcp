@@ -8,26 +8,21 @@ import play.api.libs.json.Json
  */
 case class PairRequest (
 	token: String,
-	opponentNickname: Option[String]
-)
+	opponentNickname: Option[String],
+	id: Int
+) extends Message(id)
 
 object PairRequest {
 	implicit val fmtJson = Json.format[PairRequest]
 }
 
-/*
-	available ERRORS
-	ERR_SYSTEM : in case of unknown exception
-	ERR_OPPONENT_OCCUPIED : in case that requested opponent already occupied
-	ERR_NO_AVAILABLE_PLAYERS : no free player to pair with
- */
-
 /**
 	if opponent agrees, response with his nickaname
  */
 case class PairResponse(
-	opponentNickname: String
-)
+	opponentNickname: String,
+	id: Int = MessageId.PAIR_RESPONSE
+) extends Message(id)
 
 object PairResponse {
 	implicit val fmtJson = Json.format[PairResponse]
@@ -37,22 +32,19 @@ object PairResponse {
 	receive a pair request from opponent $nickname
   */
 case class PairNotification(
-	nickname: String
-)
+	nickname: String,
+	id: Int = MessageId.PAIR_NOTIFICATION
+) extends Message(id)
 
 /**
 	approve the pair request from opponent $nicknameAPI
   */
 case class PairApprovalRequest(
 	token: String,
-	nickname: String
-)
+	nickname: String,
+	id: Int
+) extends Message(id)
 
-/*
-	available ERRORS
-	ERR_SYSTEM : in case of unknown exception
-	ERR_OPPONENT_OCCUPIED : opponent have been paired to another user before I had the chance to approve
- */
 
 
 

@@ -1,5 +1,6 @@
 package oooserver.server.handlers
 
+import akka.actor.ActorRef
 import oooserver.server.api.{ChatResponse, ChatRequest}
 import oooserver.server.util.TokenManager
 
@@ -7,7 +8,7 @@ import scala.concurrent.Future
 
 object ChatHandler extends BaseHandler[ChatRequest,ChatResponse] {
 
-    def handle(chatRequest: ChatRequest) : Future[ChatResponse] = ???
+    def handle(chatRequest: ChatRequest,sender: ActorRef) : Future[ChatResponse] = ???
     /* {
         // extract username from token
         TokenManager.parseTokenClaimUsername(chatRequest.token).map{username =>
