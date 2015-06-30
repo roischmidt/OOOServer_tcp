@@ -1,3 +1,5 @@
+package oooserver.test
+
 import oooserver.server.util.{SessionManager, UserData}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}

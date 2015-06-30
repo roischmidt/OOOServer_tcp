@@ -1,3 +1,5 @@
+package oooserver.test
+
 import oooserver.server.util.TokenManager
 import org.scalatest.{FunSpec, Matchers}
 

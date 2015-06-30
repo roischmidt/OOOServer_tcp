@@ -36,17 +36,6 @@ class Server extends Actor {
             val connection = sender()
             connection ! Register(controller)
             controller ! Register(sender())
-
-        case Received(data) =>
-            logger.info(s"Received ${data.utf8String}")
-            Message.fmtJsonReads.reads(Json.parse({data.utf8String})) match {
-                case JsSuccess(msg,_) => msg match {
-                    case m : LoginRequest => logger.info("login request arrived")
-                        Server.sessions = Server.sessions.+(m.nickname -> sender())
-                    case m : LogoutRequest => println("logout request arrived")
-                }
-                case JsError(e) => logger.warn("unsupported message arrived")
-            }
     }
 
 }

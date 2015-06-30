@@ -2,6 +2,7 @@ package oooserver.server
 
 import akka.actor.{ActorRef, Actor}
 import akka.io.Tcp
+import akka.util.ByteString
 import oooserver.server.api._
 import oooserver.server.handlers.LoginHandler
 import org.slf4j.LoggerFactory
@@ -24,10 +25,15 @@ class Controller extends Actor {
 
     def receive = {
         case Received(data) =>
-            logger.info(s"Controller Received ${data.utf8String}")
+            logger.info(s"Controller Received ${data.utf8String} , sender: ${sender}")
             Message.fmtJsonReads.reads(Json.parse({data.utf8String})) match {
                 case JsSuccess(msg,_) => msg match {
-                   // case m : LoginRequest => println("login request arrived")
+                    case m : LoginRequest => logger.info("login request arrived")
+                        Server.sessions = Server.sessions.+(m.nickname -> sender)
+                        Server.sessions.foreach { n =>
+                            n._2 ! Write(ByteString(s"${m.nickname} has joined\n"))
+                        }
+                    case m : LogoutRequest => println("logout request arrived")
                     case _ =>
 
                         println(s"unhandled message arrived $msg")
