@@ -44,8 +44,6 @@ object Server {
 
     final val logger = LoggerFactory.getLogger(this.getClass)
 
-    var sessions : Map[String,ActorRef] = Map()
-
 
     implicit val system = ActorSystem("root")
 

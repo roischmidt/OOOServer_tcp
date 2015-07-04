@@ -2,7 +2,7 @@ package oooserver.server.util
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
@@ -25,6 +25,8 @@ object UserData {
 object SessionManager {
 
     final val logger = LoggerFactory.getLogger(this.getClass)
+
+    var sessions : Map[ActorRef,String] = Map() // map(socketRef,username)
 
     final val expired = TimeUnit.SECONDS.convert(5, TimeUnit.MINUTES).toInt // session expires after 5 minutes of inactivity
 
@@ -54,6 +56,44 @@ object SessionManager {
     // check if key exists
     def exists(key: String): Future[Boolean] =
         client.exists(key)
+
+    // remove key
+    def remove(key: String): Future[Boolean] =
+        client.del(key).map{n => n > 0}
+
+    // adds a new user
+    def addUser(nickname: String, sessionRef: ActorRef) : Future[Boolean] =
+        store(nickname,UserData(None,None)).map {
+            case true =>
+                sessions = sessions.+(sessionRef -> nickname)
+                logger.info(s"number of online users now ${sessions.size}")
+                true
+            case false => false
+        }
+
+    def removeUserBySessionRef(sessionRef: ActorRef) : Future[Boolean] =
+        sessions.find(_._1 == sessionRef).map { e =>
+            remove(e._2).map{
+                case true =>
+                    sessions = sessions.filterNot(_._1 == sessionRef)
+                    logger.info(s"number of online users now ${sessions.size}")
+                    true
+                case false => false
+            }
+
+        }.getOrElse(Future.successful(false))
+
+    def removeUserByNickname(nickname: String) : Future[Boolean] =
+            remove(nickname).map{
+                case true =>
+                    sessions = sessions.filterNot(_._2 == nickname)
+                    logger.info(s"number of online users now ${sessions.size}")
+                    true
+                case false => false
+            }
+
+    // get the user sessionRef
+    def getUserSessionRef(nickname: String) : Option[ActorRef] = sessions.find(_._2 == nickname).map{e => e._1}
 
     // get UserData object
     def getData(username: String): Future[Option[UserData]] =
