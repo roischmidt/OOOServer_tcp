@@ -108,19 +108,17 @@ object SessionManager {
         getData(username).map(_.exists(_.opponent.isDefined))
 
     // returns the online player list
-    def onlinePlayers(): Future[List[String]] =
-        client.keys()
+    def onlinePlayers(): List[String] =
+        sessions.values.toList
 
     // returns the free player list
     def freePlayerList(): Future[List[String]] =
-      onlinePlayers().flatMap { onlinePlayers =>
           Future.sequence( onlinePlayers.map { username =>
               isPaired(username).map {
                   case true => ""
                   case false => username
               }
           }).map(_.filter(_.nonEmpty))
-      }
 
     // find random free player
     def findFreePlayer(usernameToExclude: Option[String] = None): Future[Option[String]] =

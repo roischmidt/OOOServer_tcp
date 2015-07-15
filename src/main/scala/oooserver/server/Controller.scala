@@ -31,10 +31,11 @@ class Controller extends Actor {
                 data.utf8String
             })) match {
                 case JsSuccess(msg, _) => msg match {
-                    case m: LoginRequest => logger.info("login request arrived")
+                    case m: LoginRequest =>
+                        logger.info("login request arrived")
                         LoginHandler.handle(m, sender()).map { loginRes =>
                             SessionManager.getUserSessionRef(m.nickname).foreach { ref =>
-                               ref ! Write(ByteString(LoginResponse.fmtJson.writes(loginRes).toString()))
+                                ref ! Write(ByteString(LoginResponse.fmtJson.writes(loginRes).toString()))
                             }
                         }
                     case m: LogoutRequest => println("logout request arrived")
