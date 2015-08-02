@@ -6,6 +6,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
+import oooserver.server.api.{ErrorCode, CustomErrorException}
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsSuccess, Json}
 
@@ -39,7 +40,10 @@ object SessionManager {
     val client = RedisClient(ConfigFactory.load.getString("OOOServer.redis.host"), ConfigFactory.load.getInt("OOOServer.redis.port"))
 
     // clear all DB
-    def clearAll() = client.flushdb()
+    def clearAll() : Future[Unit] = {
+        sessions = sessions.empty
+        client.flushdb().map{_ => }
+    }
 
     // store CacheData object
     def store(key: String, value: UserData): Future[Boolean] =
@@ -61,15 +65,28 @@ object SessionManager {
     def remove(key: String): Future[Boolean] =
         client.del(key).map{n => n > 0}
 
+    // check if user is online
+    def isOnline(nickname: String): Future[Boolean] = exists(nickname)
+
     // adds a new user
     def addUser(nickname: String, sessionRef: ActorRef) : Future[Boolean] =
-        store(nickname,UserData(None,None)).map {
+        isOnline(nickname).flatMap {
             case true =>
-                sessions = sessions.+(sessionRef -> nickname)
-                logger.info(s"number of online users now ${sessions.size}")
-                true
-            case false => false
+                logger.info(s"$nickname is already online")
+                Future.successful(false)
+            case false =>
+                store(nickname,UserData(None,None)).map {
+                    case true =>
+                        sessions = sessions.+(sessionRef -> nickname)
+                        logger.info(s"number of online users now ${sessions.size}")
+                        true
+                    case false =>
+                        logger.error("Couldn't store user in redis")
+                        throw CustomErrorException(s"Couldn't add user to DB",ErrorCode.ERR_SYSTEM)
+
+                }
         }
+
 
     def removeUserBySessionRef(sessionRef: ActorRef) : Future[Boolean] =
         sessions.find(_._1 == sessionRef).map { e =>
@@ -109,7 +126,7 @@ object SessionManager {
 
     // returns the online player list
     def onlinePlayers(): List[String] =
-        sessions.values.toList
+        sessions.valuesIterator.toList
 
     // returns the free player list
     def freePlayerList(): Future[List[String]] =

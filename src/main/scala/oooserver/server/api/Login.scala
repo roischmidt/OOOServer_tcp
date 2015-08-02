@@ -12,7 +12,6 @@ object LoginRequest {
 }
 
 case class LoginResponse(
-    token: String,
     id: Int = MessageId.LOGIN_RESPONSE
 ) extends Message(id)
 

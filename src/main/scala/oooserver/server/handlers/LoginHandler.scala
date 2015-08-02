@@ -11,8 +11,10 @@ object LoginHandler extends BaseHandler[LoginRequest,LoginResponse]{
 	override def handle(request: LoginRequest,sender: ActorRef): Future[LoginResponse] =
 		SessionManager.addUser(request.nickname,sender).map {
 			case true =>
-				LoginResponse("token")
+				LoginResponse()
 			case false =>
-				throw CustomErrorException(s"${request.nickname} can't login right now. already online or an error occurred",ErrorCode.ERR_SYSTEM)
+				throw CustomErrorException(s"${request.nickname} already exists",ErrorCode.ERR_USER_ALREADY_EXISTS)
+		}.recoverWith{
+			case e: Throwable => throw e
 		}
 }
