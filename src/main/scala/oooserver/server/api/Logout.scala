@@ -3,8 +3,7 @@ package oooserver.server.api
 import play.api.libs.json.Json
 
 case class LogoutRequest (
-	token: String,
-	id: Int
+	id: Int = MessageId.LOGOUT_REQUEST
 ) extends Message(id)
 
 
@@ -13,8 +12,7 @@ object LogoutRequest{
 }
 
 case class LogoutResponse(
-	reason: Int ,// can be ERR_USER_OFFLINE : user disconnected. ERR_NO_OPPONENT : user decided to leave
-	id: Int
+	id: Int = MessageId.LOGOUT_RESPONSE
 ) extends Message(id)
 
 

@@ -22,5 +22,5 @@ object TestClient {
 
     implicit val system = ActorSystem("test")
 
-    def zserver = system.actorOf(Props(classOf[TestClient]))
+    lazy val zserver = system.actorOf(Props(classOf[TestClient]))
 }

@@ -12,6 +12,8 @@ object Message {
     implicit val fmtJsonWrites = new Writes[Message] {
         def writes(msg: Message) = msg match {
             case m : LoginRequest => LoginRequest.fmtJson.writes(m)
+            case m : LogoutRequest => LogoutRequest.fmtJson.writes(m)
+
         }
     }
 
@@ -20,6 +22,9 @@ object Message {
             case MessageId.LOGIN_REQUEST =>
                 println("trying to parse login request")
                 LoginRequest.fmtJson.reads(json)
+            case MessageId.LOGOUT_REQUEST =>
+                println("trying to parse logout request")
+                LogoutRequest.fmtJson.reads(json)
             case _ => JsError("trying to parse unknown message")
         }
     }

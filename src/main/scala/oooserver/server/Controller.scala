@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef}
 import akka.io.Tcp
 import akka.util.ByteString
 import oooserver.server.api._
-import oooserver.server.handlers.LoginHandler
+import oooserver.server.handlers.{LogoutHandler, LoginHandler}
 import oooserver.server.util.SessionManager
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsError, JsSuccess, Json}
@@ -38,7 +38,11 @@ class Controller extends Actor {
                                 ref ! Write(ByteString(LoginResponse.fmtJson.writes(loginRes).toString()))
                             }
                         }
-                    case m: LogoutRequest => println("logout request arrived")
+                    case m: LogoutRequest =>
+                        logger.info("logout request arrived")
+                        LogoutHandler.handle(m,sender()).map { logoutRes =>
+                                sender ! Write(ByteString(LogoutResponse.fmtJson.writes(logoutRes).toString()))
+                            }
                     case _ =>
                         logger.warn(s"unhandled message arrived $msg")
                 }

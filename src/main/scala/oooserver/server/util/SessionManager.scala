@@ -63,7 +63,7 @@ object SessionManager {
 
     // remove key
     def remove(key: String): Future[Boolean] =
-        client.del(key).map{n => n > 0}
+        client.del(key).map{_ > 0}
 
     // check if user is online
     def isOnline(nickname: String): Future[Boolean] = exists(nickname)
@@ -92,10 +92,12 @@ object SessionManager {
         sessions.find(_._1 == sessionRef).map { e =>
             remove(e._2).map{
                 case true =>
-                    sessions = sessions.filterNot(_._1 == sessionRef)
+                    sessions = sessions.-(sessionRef)
                     logger.info(s"number of online users now ${sessions.size}")
                     true
-                case false => false
+                case false =>
+                    sessions = sessions.-(sessionRef)
+                    false
             }
 
         }.getOrElse(Future.successful(false))
